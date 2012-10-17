@@ -58,10 +58,9 @@ package com.physics {
 		 * @param	sheet the sprite sheet your sprite is in
 		 * @return the sprite that is drawn on the stage with the update functions
 		 */
-		public function addSprite(shape:int, type:Class, sheet:int = 0):Object {
+		public function addSprite(shape:int, type:Class, sheet:int = 0):* {
 			//TODO: Create a stack where the sprites are put when there is no stage3D available
-			//TODO: Make the var b:Box = addSprite() work
-			var s:Object = _po.respawn(shape, type, sheet);
+			var s:* = _po.respawn(shape, type, sheet);
 			var p:Point = _sl[sheet].getSize(shape);
 			s.width = p.x, s.height = p.y;
 			s.x = s.y = 0;
@@ -81,13 +80,32 @@ package com.physics {
 			return s;
 		}
 		
+		/**
+		 * Add the sprite version of a movieClip
+		 * @param	shapes a list containing all the frames as identified by their shapeId
+		 * @param	protoFrame the frame that is used for the collision
+		 * @param	sheet the sprite sheet your sprites are in
+		 * @return 	the sprites that are drawn on the stage with the update functions
+		 */
 		public function addMovie(shapes:Vector.<int>, protoFrame:int = 0, sheet:int = 0):MovieBox {
-			var s:MovieBox = _po.respawn(shapes[protoFrame], MovieBox, sheet);
-			var p:Point = _sl[sheet].getSize(shapes[protoFrame]);
+			var d:int = shapes[protoFrame];
+			var s:MovieBox = _po.respawn(d, MovieBox, sheet);
+			var p:Point = _sl[sheet].getSize(d);
+			s.frameList = shapes
 			s.width = p.x, s.height = p.y;
 			s.x = s.y = 0;
 			s.alpha = 1;
-			
+			if(!s.respawned){
+				var fi:uint = s.mapId * 4
+				_v.push(0, 0, 1, 0, 0,1, 0, 0,1, 0, 0,1);
+				_i.push(fi, fi + 1, fi + 2, fi, fi + 2, fi + 3);
+				var cuv:Vector.<Number > = _sl[sheet].getUVs(d);
+				var i:int, l:int = _uv.length;
+				for (i = 0; i < 8; i++) {
+					_uv[l + i] = cuv[i];
+				}
+			}
+			_uvb = true;
 			return s;
 		}
 		
@@ -168,13 +186,19 @@ package com.physics {
 				
 				setTextures();
 				
-				//TODO: Add alpha to boxes
-				
-				var i:int, j:int, cdx:int, b:IMapAble, li:Vector.<Point>, al:Number;
+				var i:int, j:int, l2:int, cdx:int, b:IMapAble, li:Vector.<Point>, al:Number, cuv:Vector.<Number>;
 				for (i = 0; i < l; i++) {
 					b = _po.children[i];
 					cdx = b.mapId * 12;
 					if (b.visible && b.active) {
+						if (b.update()) {
+							_uvb = true;
+							cuv = _sl[b.sheetId].getUVs(b.shapeId);
+							l2 = b.mapId * 8;
+							for (j = 0; j < 8; j++) {
+								_uv[l2 + j] = cuv[j];
+							}
+						}
 						al = b.alpha;
 						li = b.list;
 						_v[cdx] = li[3].x;

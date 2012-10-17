@@ -113,7 +113,7 @@ package com.shapes {
 		}
 		
 		public function update(loop:Boolean = false):Boolean {
-			return true;
+			return false;
 		}
 		
 		/**

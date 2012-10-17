@@ -5,6 +5,7 @@ package {
 	import com.math.Math2;
 	import com.events.MessageEvent;
 	import com.shapes.Box;
+	import com.shapes.MovieBox;
 	import com.utils.Stats;
 	import flash.display.Bitmap;
 	import flash.display.Sprite;
@@ -80,7 +81,8 @@ package {
 			}
 			if (w.initialized) {
 				for (var j:int = 0; j < 5; j++){
-					var s:Object = w.addSprite(Math.random()*16, Box);
+					var s:MovieBox = w.addMovie(new<int>[1, 2, 3, 4, 5, 6, 7, 8], 1);
+					s.play();
 					s.x = mouseX;
 					s.y = mouseY;
 					s.centerX = s.width >> 1;

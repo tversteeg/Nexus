@@ -12,11 +12,11 @@ package com.shapes {
 		protected var _py:Boolean;// Playing condition
 		protected var _ud:Boolean;// Updated
 		
-		public function MovieBox(frame:int = 1,x:Number=0, y:Number=0, width:Number=0, height:Number=0, rotation:Number=0) {
+		public function MovieBox(frame:int = 0,x:Number=0, y:Number=0, width:Number=0, height:Number=0, rotation:Number=0) {
 			super(x, y, width, height, rotation);
 			_c = frame;
 			_py = false;
-			_ud = true;
+			_ud = false;
 		}
 		
 		/**
@@ -28,13 +28,14 @@ package com.shapes {
 			if (_py) {
 				_c++;
 				_ud = true;
-				if (_c > _f.length) {
+				if (_c >= _f.length - 1) {
 					if (loop) {
 						_c = 0;
 					}else {
 						_py = false;
 					}
 				}
+				shapeId = _f[_c];
 			}
 			return _ud;
 		}
