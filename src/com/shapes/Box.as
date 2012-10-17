@@ -112,6 +112,10 @@ package com.shapes {
 			return _tl;
 		}
 		
+		public function update(loop:Boolean = false):Boolean {
+			return true;
+		}
+		
 		/**
 		 * Gets the list of the center Points where the Points have been tranformed, the center Points are the Points between 2 edges
 		 */

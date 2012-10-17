@@ -2,6 +2,7 @@ package com.physics {
 	import com.adobe.utils.*;
 	import com.bitmap.*;
 	import com.events.*;
+	import com.interfaces.IMapAble;
 	import com.math.Vector2;
 	import com.objects.*;
 	import com.shapes.*;
@@ -63,8 +64,7 @@ package com.physics {
 			var s:Object = _po.respawn(shape, type, sheet);
 			var p:Point = _sl[sheet].getSize(shape);
 			s.width = p.x, s.height = p.y;
-			s.x = 0;
-			s.y = 0;
+			s.x = s.y = 0;
 			s.alpha = 1;
 			
 			if(!s.respawned){
@@ -81,9 +81,14 @@ package com.physics {
 			return s;
 		}
 		
-		public function removeSprite(sprite:Object):void{
-			sprite.active = false;
-			sprite.visible = false;
+		public function addMovie(shapes:Vector.<int>, protoFrame:int = 0, sheet:int = 0):MovieBox {
+			var s:MovieBox = _po.respawn(shapes[protoFrame], MovieBox, sheet);
+			var p:Point = _sl[sheet].getSize(shapes[protoFrame]);
+			s.width = p.x, s.height = p.y;
+			s.x = s.y = 0;
+			s.alpha = 1;
+			
+			return s;
 		}
 		
 		/**
@@ -165,7 +170,7 @@ package com.physics {
 				
 				//TODO: Add alpha to boxes
 				
-				var i:int, j:int, cdx:int, b:Box, li:Vector.<Point>, al:Number;
+				var i:int, j:int, cdx:int, b:IMapAble, li:Vector.<Point>, al:Number;
 				for (i = 0; i < l; i++) {
 					b = _po.children[i];
 					cdx = b.mapId * 12;
