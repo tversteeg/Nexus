@@ -65,7 +65,6 @@ package com.physics {
 			s.width = p.x, s.height = p.y;
 			s.x = s.y = 0;
 			s.alpha = 1;
-			
 			if(!s.respawned){
 				var fi:uint = s.mapId * 4
 				_v.push(0, 0, 1, 0, 0,1, 0, 0,1, 0, 0,1);

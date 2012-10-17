@@ -57,6 +57,20 @@ package {
 			t.height = 100;
 			t.y = 100;
 			
+			for (var i:int = 0; i < 10;i++){
+				var s:MovieBox = w.addMovie(new<int>[0, 2, 3, 4, 5, 6, 7, 8, 1, 2, 6, 8, 10, 12, 16], 1);
+				s.gotoAndPlay(0);
+				s.loop = true
+				s.x = mouseX;
+				s.y = mouseY;
+				s.centerX = s.width >> 1;
+				s.centerY = s.height >> 1;
+				s.vx = Math.random() * 10 - 5;
+				s.vy = Math.random() * 10 - 5;
+				s.alpha = 1;
+				objectList.push(s);
+			}
+			
 			addEventListener(Event.ENTER_FRAME, update);
 		}
 		
@@ -68,9 +82,7 @@ package {
 				if (o.active) {
 					o.x += o.vx;
 					o.y += o.vy;
-					o.rotation += o.ro;
 					o.alpha -= 0.01;
-					o.scaleX = o.scaleY -= 0.01;
 					if (o.alpha <= 0 || o.x < 0 || o.x > 800 || o.y < 0 || o.y > 600 ) {
 						o.die();
 						objectList.splice(i, 1);
@@ -79,10 +91,10 @@ package {
 					}
 				}
 			}
-			if (w.initialized) {
+			/*if (w.initialized) {
 				for (var j:int = 0; j < 5; j++){
 					var s:MovieBox = w.addMovie(new<int>[1, 2, 3, 4, 5, 6, 7, 8], 1);
-					s.play();
+					s.gotoAndPlay(0);
 					s.x = mouseX;
 					s.y = mouseY;
 					s.centerX = s.width >> 1;
@@ -94,7 +106,7 @@ package {
 					objectList[l + j] = s;
 				}
 				l = objectList.length;
-			}
+			}*/
 			t.text = "Objects: " + l;
 			t.appendText("\nTotal list length: " + w._po.children.length);
 			t.appendText("\nTotal vertices: " + w._v.length);

@@ -30,7 +30,7 @@ package com.interfaces {
 		function set respawned(v:Boolean):void;
 		function get respawned():Boolean;
 		
-		function update(loop:Boolean=false):Boolean;
+		function update():Boolean;
 	}
 	
 }
