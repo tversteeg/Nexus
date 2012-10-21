@@ -6,6 +6,7 @@ package {
 	import com.events.MessageEvent;
 	import com.shapes.Box;
 	import com.shapes.MovieBox;
+	import com.shapes.StaticBox;
 	import com.utils.Stats;
 	import flash.display.Bitmap;
 	import flash.display.Sprite;
@@ -36,6 +37,7 @@ package {
 		private var s:Stats = new Stats();
 		
 		private var oldMouse:Point = new Point();
+		private var vars:Object;
 		
 		public function Main():void {
 			if (stage) init();
@@ -45,10 +47,23 @@ package {
 		private function init(e:Event = null):void {
 			removeEventListener(Event.ADDED_TO_STAGE, init);
 			
+			vars = { antiAliasing:2, mipmap:false, backColor:0xCCCCCC, maxCap:2000/*, fragment:
+				"tex ft0, v0, fs0 <2d,linear, nearest, nomip>\n"+
+				"mul ft0, ft0, v0.zzzz\n" +
+				"sub ft1.xy, v0.xy, fc0.xy\n" +
+				"mul ft1.x, ft1.x, ft1.x\n"+
+				"mul ft1.y, ft1.y, ft1.y\n" +
+				"add ft1.y, ft1.x, ft1.y\n" +
+				"sqrt ft2.xyz, ft1.yyy \n" +
+				"mul ft0.xyz, ft2.xyz, ft0\n" +
+				"mov oc, ft0 \n"*/}
+			
 			w = new World(800, 600, 1/30);
 			w.addSpriteSheet(sheet1, sheetPos1);
-			w.initialize(stage, { antiAliasing:2, mipmap:false, backColor:0xCCCCCC } );
+			w.initialize(stage, vars);
 			w.addEventListener(MessageEvent.CONTENT_ACTIVE, wActive, false, 0 , true);
+			w.preparePool(1000, StaticBox, 2);
+			w.preparePool(1000, Box, 3);
 			
 			addChild(t);
 			addChild(s);
@@ -57,25 +72,11 @@ package {
 			t.height = 100;
 			t.y = 100;
 			
-			for (var i:int = 0; i < 10;i++){
-				var s:MovieBox = w.addMovie(new<int>[0, 2, 3, 4, 5, 6, 7, 8, 1, 2, 6, 8, 10, 12, 16], 1);
-				s.gotoAndPlay(0);
-				s.loop = true
-				s.x = mouseX;
-				s.y = mouseY;
-				s.centerX = s.width >> 1;
-				s.centerY = s.height >> 1;
-				s.vx = Math.random() * 10 - 5;
-				s.vy = Math.random() * 10 - 5;
-				s.alpha = 1;
-				objectList.push(s);
-			}
-			
 			addEventListener(Event.ENTER_FRAME, update);
 		}
 		
 		private function update(e:Event):void {
-			w.updateTimeStep();
+			w.updateTimeStep({fragment:new <Number>[mouseX/800, mouseY/600, 0, 1]});
 			var i:int, l:int = objectList.length, o:Object;
 			for (i = 0; i < l; i++) {
 				o = objectList[i];
@@ -91,22 +92,24 @@ package {
 					}
 				}
 			}
-			/*if (w.initialized) {
-				for (var j:int = 0; j < 5; j++){
-					var s:MovieBox = w.addMovie(new<int>[1, 2, 3, 4, 5, 6, 7, 8], 1);
-					s.gotoAndPlay(0);
+			for (var j:int = 0; j < 25; j++) {
+				if(Math.random()>0.5){
+					var s:StaticBox = w.addSprite(2, StaticBox);
 					s.x = mouseX;
 					s.y = mouseY;
-					s.centerX = s.width >> 1;
-					s.centerY = s.height >> 1;
 					s.vx = (mouseX - oldMouse.x) + Math.random() * 10 - 5;
 					s.vy = (mouseY - oldMouse.y) + Math.random() * 10 - 5;
-					s.ro = Math.random() * 1 - 0.5;
-					s.scaleX = s.scaleY = Math.random() * 1 + 0.5;
 					objectList[l + j] = s;
+				}else {
+					var s2:Box = w.addSprite(3, Box);
+					s2.x = mouseX;
+					s2.y = mouseY;
+					s2.vx = (mouseX - oldMouse.x) + Math.random() * 10 - 5;
+					s2.vy = (mouseY - oldMouse.y) + Math.random() * 10 - 5;
+					objectList[l + j] = s2;
 				}
-				l = objectList.length;
-			}*/
+			}
+			l = objectList.length;
 			t.text = "Objects: " + l;
 			t.appendText("\nTotal list length: " + w._po.children.length);
 			t.appendText("\nTotal vertices: " + w._v.length);

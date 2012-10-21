@@ -74,6 +74,7 @@ package com.physics {
 				for (i = 0; i < 8; i++) {
 					_uv[l + i] = cuv[i];
 				}
+				_ini = true;
 			}
 			_uvb = true;
 			return s;
@@ -90,7 +91,7 @@ package com.physics {
 			var d:int = shapes[protoFrame];
 			var s:MovieBox = _po.respawn(d, MovieBox, sheet);
 			var p:Point = _sl[sheet].getSize(d);
-			s.frameList = shapes
+			s.frameList = shapes;
 			s.width = p.x, s.height = p.y;
 			s.x = s.y = 0;
 			s.alpha = 1;
@@ -106,6 +107,29 @@ package com.physics {
 			}
 			_uvb = true;
 			return s;
+		}
+		
+		/**
+		 * Prepares the object pool by creating the new objects in advance
+		 * @param	amount the amount of objects created, this amount is multiplied by the arguments
+		 * @param	type the type of object that must be instantiated
+		 * @param	... args must be integers, the shapeId's that must be prepared
+		 */
+		public function preparePool(amount:int, type:Class, ... args):void {
+			var i:int, j:int, k:int, fi:uint, cuv:Vector.<Number>, l:int = args.length, l2:int = _uv.length, s:*;
+			for (i = 0; i < l; i++) {
+				for (j = 0; j < amount; j++) {
+					s = _po.respawn(args[i], type, 0, true);
+					fi= s.mapId << 2
+					_v.push(0, 0, 1, 0, 0,1, 0, 0,1, 0, 0,1);
+					_i.push(fi, fi + 1, fi + 2, fi, fi + 2, fi + 3);
+					cuv = _sl[0].getUVs(args[i]);
+					for (k = 0; k < 8; k++) {
+						_uv[l2 + k] = cuv[k];
+					}
+					l2 += 8;
+				}
+			}
 		}
 		
 		/**
@@ -128,6 +152,9 @@ package com.physics {
 				_o.g = ((_o.backColor >> 8) & 0xff) / 255;
 				_o.b = (_o.backColor & 0xff) / 255;
 			}
+			if (_o.hasOwnProperty("maxCap")) {
+				_po.setCap(_o.maxCap);
+			}
 			
 			_v = new Vector.<Number>();
 			_i = new Vector.<uint>();
@@ -140,12 +167,12 @@ package com.physics {
 		/**
 		 * Updates the engine where the physics get recalculated if it lags behind
 		 */
-		public function updateTimeStep():void {
+		public function updateTimeStep(constants:Object = null):void {
 			_bt = getTimer();
 			_ot = (_bt - _at) - _st;
 			
 			updateFrame();
-			drawFrame();
+			drawFrame(constants);
 			
 			_at = getTimer();
 			_td = _at - _bt;
@@ -172,16 +199,25 @@ package com.physics {
 		/**
 		 * Draws the objects to the stage
 		 */
-		public function drawFrame():void {
+		public function drawFrame(constants:Object = null):void {
 			//TODO: Give every drawObject a drawPriority, and draw the highest priority latest
 			_c3d.clear(_o.r, _o.g, _o.b);
 			
-			var l:int = _po.children.length;
+			var l:int = _po.length;
 			
-			if (l > 0){
+			if (l > 0 && _po.ready){
 				_c3d.setProgram(_sh);
 				_c3d.setBlendFactors(Context3DBlendFactor.ONE, Context3DBlendFactor.ONE_MINUS_SOURCE_ALPHA);
 				_c3d.setProgramConstantsFromMatrix(Context3DProgramType.VERTEX, 0, _mvm, true);
+				
+				if (constants != null) {
+					if(constants.hasOwnProperty("vertex")){
+						_c3d.setProgramConstantsFromVector(Context3DProgramType.VERTEX, 1, constants.vertex);
+					}
+					if(constants.hasOwnProperty("fragment")){
+						_c3d.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, 0, constants.fragment);
+					}
+				}
 				
 				setTextures();
 				
@@ -235,7 +271,7 @@ package com.physics {
 				_c3d.setVertexBufferAt(0, _vb, 0, Context3DVertexBufferFormat.FLOAT_3);
 				_c3d.setVertexBufferAt(1, _ub, 0,  Context3DVertexBufferFormat.FLOAT_2);
 
-				_c3d.drawTriangles(_ib, 0, _po.children.length << 1);
+				_c3d.drawTriangles(_ib, 0, _po.length << 1);
 			}
 			_c3d.present();
 		}
@@ -273,20 +309,27 @@ package com.physics {
 			_c3d.configureBackBuffer(_w, _h, _o.antiAlias, false);
 			
 			var vert:AGALMiniAssembler = new AGALMiniAssembler();
-			vert.assemble( Context3DProgramType.VERTEX,
-			        "dp4 op.x, va0, vc0 \n"+
-			        "dp4 op.y, va0, vc1 \n"+ 
-			        "mov op.z, vc2.z    \n"+
-			        "mov op.w, vc3.w    \n"+
-			        "mov v0, va1.xy     \n"+
-			        "mov v0.z, va0.z    \n");
-
 			var frag:AGALMiniAssembler = new AGALMiniAssembler();
-			frag.assemble( Context3DProgramType.FRAGMENT,
+			if (_o.hasOwnProperty("vertex")) {
+				vert.assemble( Context3DProgramType.VERTEX, _o.vertex);
+			}else {
+				vert.assemble( Context3DProgramType.VERTEX,
+					"dp4 op.x, va0, vc0 \n"+
+					"dp4 op.y, va0, vc1 \n"+ 
+					"mov op.z, vc2.z    \n"+
+					"mov op.w, vc3.w    \n"+
+					"mov v0, va1.xy     \n"+
+					"mov v0.z, va0.z    \n");
+			}
+			if (_o.hasOwnProperty("fragment")) {
+				frag.assemble( Context3DProgramType.FRAGMENT, _o.fragment);
+			}else {
+				frag.assemble( Context3DProgramType.FRAGMENT,
 					"tex ft0, v0, fs0 <2d,linear, nearest, nomip>\n"+
 					"mul ft0, ft0, v0.zzzz\n"+
 					"mov oc, ft0 \n");
-
+			}
+			
 			_sh = _c3d.createProgram();
 			_sh.upload(vert.agalcode, frag.agalcode);
 		}

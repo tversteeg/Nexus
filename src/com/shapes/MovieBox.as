@@ -22,6 +22,16 @@ package com.shapes {
 		}
 		
 		/**
+		 * Deactivates the object so it can be respawned by the pool
+		 */
+		public override function die():void {
+			_v = false;
+			_a = false;
+			_py = false;
+			_ud = false;
+		}
+		
+		/**
 		 * Updates the current frame
 		 * @param	loop when the animation reaches the last frame, repeat or not
 		 */

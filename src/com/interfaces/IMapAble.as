@@ -31,6 +31,7 @@ package com.interfaces {
 		function get respawned():Boolean;
 		
 		function update():Boolean;
+		function die():void;
 	}
 	
 }

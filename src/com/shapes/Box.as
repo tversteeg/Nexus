@@ -54,6 +54,9 @@ package com.shapes {
 			_tl[3] = new Point(0, 0);
 		}
 		
+		/**
+		 * Deactivates the object so it can be respawned by the pool
+		 */
 		public function die():void {
 			_v = false;
 			_a = false;
