@@ -7,7 +7,8 @@ package nexus.shapes {
 	 * ...
 	 * @author Thomas Versteeg Et Al, 2012
 	 */
-	public dynamic class Box implements IMapAble{
+	public dynamic class Box implements IMapAble {
+	//TODO: Change dynamic class to object variable	
 		
 		protected var _m:Matrix;// Transform matrix
 		

@@ -140,18 +140,18 @@ package nexus.objects {
 			_s = stage;
 			_o = variables;
 			
-			if (!_o.hasOwnProperty("antiAliasing")) {
+			if (!"antiAliasing" in _o) {
 				_o.antiAliasing = 0;
 			}
-			if (!_o.hasOwnProperty("mipmap")) {
+			if (!"mipmap" in _o) {
 				_o.mipmap = false;
 			}
-			if (_o.hasOwnProperty("backColor")) {
+			if ("backColor" in _o) {
 				_o.r = ((_o.backColor >> 16) & 0xff) / 255;
 				_o.g = ((_o.backColor >> 8) & 0xff) / 255;
 				_o.b = (_o.backColor & 0xff) / 255;
 			}
-			if (_o.hasOwnProperty("maxCap")) {
+			if ("maxCap" in _o) {
 				_po.cap = _o.maxCap;
 			}
 			
@@ -210,10 +210,10 @@ package nexus.objects {
 				_c3d.setProgramConstantsFromMatrix(Context3DProgramType.VERTEX, 0, _mvm, true);
 				
 				if (constants != null) {
-					if(constants.hasOwnProperty("vertex")){
+					if("vertex" in constants){
 						_c3d.setProgramConstantsFromVector(Context3DProgramType.VERTEX, 1, constants.vertex);
 					}
-					if(constants.hasOwnProperty("fragment")){
+					if("fragment" in constants){
 						_c3d.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, 0, constants.fragment);
 					}
 				}
@@ -295,6 +295,32 @@ package nexus.objects {
 			return _ini;
 		}
 		
+		//TODO: Add description
+		public function getSpritePixel(xPosition:Number, yPosition:Number, spriteId:int, sheetId:int = 0):uint {
+			var size:Point = _sl[sheetId].getSize(spriteId);
+			if (xPosition< 0 || xPosition > size.x || yPosition < 0 || yPosition > size.y) return 0;
+			var tempPos:Point = _sl[sheetId].getPos(spriteId);
+			tempPos.x += xPosition;
+			tempPos.y += yPosition;
+			return _sl[sheetId].sheetBitmap.getPixel32(tempPos.x, tempPos.y);
+		}
+		
+		public function setSpritePixel(xPosition:Number, yPosition:Number, color:uint, spriteId:int, sheetId:int = 0):void {
+			var size:Point = _sl[sheetId].getSize(spriteId);
+			if (xPosition< 0 || xPosition > size.x || yPosition < 0 || yPosition > size.y) return;
+			var tempPos:Point = _sl[sheetId].getPos(spriteId);
+			tempPos.x += xPosition;
+			tempPos.y += yPosition;
+			_sl[sheetId].sheetBitmap.setPixel32(tempPos.x, tempPos.y, color);
+		}
+		
+		public function uploadTextures():void {
+			var i:int, l:int = _sl.length;
+			for (i = 0; i < l; i++) {
+				_sl[i].uploadTexture(_c3d, _o.mipmap);
+			}
+		}
+		
 		private function context3DEvent(e:Event):void {
 			_c3d = _s.stage3Ds[0].context3D;
 			setupShaders();
@@ -310,7 +336,7 @@ package nexus.objects {
 			
 			var vert:AGALMiniAssembler = new AGALMiniAssembler();
 			var frag:AGALMiniAssembler = new AGALMiniAssembler();
-			if (_o.hasOwnProperty("vertex")) {
+			if ("vertex" in _o) {
 				vert.assemble( Context3DProgramType.VERTEX, _o.vertex);
 			}else {
 				vert.assemble( Context3DProgramType.VERTEX,
@@ -321,7 +347,7 @@ package nexus.objects {
 					"mov v0, va1.xy     \n"+
 					"mov v0.z, va0.z    \n");
 			}
-			if (_o.hasOwnProperty("fragment")) {
+			if ("fragment" in _o) {
 				frag.assemble( Context3DProgramType.FRAGMENT, _o.fragment);
 			}else {
 				frag.assemble( Context3DProgramType.FRAGMENT,
@@ -332,13 +358,6 @@ package nexus.objects {
 			
 			_sh = _c3d.createProgram();
 			_sh.upload(vert.agalcode, frag.agalcode);
-		}
-		
-		private function uploadTextures():void {
-			var i:int, l:int = _sl.length;
-			for (i = 0; i < l; i++) {
-				_sl[i].uploadTexture(_c3d, _o.mipmap);
-			}
 		}
 		
 		private function setTextures():void {

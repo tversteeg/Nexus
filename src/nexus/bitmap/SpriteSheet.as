@@ -45,7 +45,7 @@ package nexus.bitmap {
 				var mw:int = _s.width;
 				var mh:int = _s.height;
 				var ml:int = 0;
-				var mi:BitmapData = new BitmapData( _s.width, _s.height );
+				var mi:BitmapData = new BitmapData( _s.width, _s.height, true, 0);
 				var st:Matrix = new Matrix();
 				while ( mw > 0 && mh > 0 ) {
 					mi.draw( _s, st, null, null, null, true );

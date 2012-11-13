@@ -52,6 +52,10 @@ package nexus.objects {
 			_l[_t] = c;
 			_t++;
 			
+			if (!init) {
+				_r = true;	
+			}
+			
 			return c;
 		}
 		

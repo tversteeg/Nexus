@@ -1,13 +1,13 @@
 package {
-	import com.collision.Intersection;
-	import com.math.matrix;
-	import com.physics.World;
-	import com.math.Math2;
-	import com.events.MessageEvent;
-	import com.shapes.Box;
-	import com.shapes.MovieBox;
-	import com.shapes.StaticBox;
-	import com.utils.Stats;
+	import nexus.collision.Intersection;
+	import nexus.math.matrix;
+	import nexus.objects.World;
+	import nexus.math.Math2;
+	import nexus.events.MessageEvent;
+	import nexus.shapes.Box;
+	import nexus.shapes.MovieBox;
+	import nexus.shapes.StaticBox;
+	import nexus.utils.Stats;
 	import flash.display.Bitmap;
 	import flash.display.Sprite;
 	import flash.events.Event;
@@ -29,7 +29,7 @@ package {
 		public var sheet1:Bitmap = new Sheet();
 		public var sheetPos1:String = new Position();
 		
-		public var w:World;
+		public var w:World
 		
 		private var t:TextField = new TextField();
 		private var objectList:Vector.<Object> = new Vector.<Object>();
@@ -47,7 +47,7 @@ package {
 		private function init(e:Event = null):void {
 			removeEventListener(Event.ADDED_TO_STAGE, init);
 			
-			vars = { antiAliasing:2, mipmap:false, backColor:0xCCCCCC, maxCap:2000/*, fragment:
+			vars = { antiAliasing:0, mipmap:true, backColor:0xCCCCCC, maxCap:2000/*, fragment:
 				"tex ft0, v0, fs0 <2d,linear, nearest, nomip>\n"+
 				"mul ft0, ft0, v0.zzzz\n" +
 				"sub ft1.xy, v0.xy, fc0.xy\n" +
@@ -62,8 +62,6 @@ package {
 			w.addSpriteSheet(sheet1, sheetPos1);
 			w.initialize(stage, vars);
 			w.addEventListener(MessageEvent.CONTENT_ACTIVE, wActive, false, 0 , true);
-			w.preparePool(1000, StaticBox, 2);
-			w.preparePool(1000, Box, 3);
 			
 			addChild(t);
 			addChild(s);
