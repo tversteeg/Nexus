@@ -5,43 +5,56 @@ package nexus.utils {
 	import flash.display3D.IndexBuffer3D;
 	import flash.display3D.Program3D;
 	import flash.display3D.textures.Texture;
-	import flash.utils.ByteArray;
 	import nexus.adobe.utils.AGALMiniAssembler;
 	/**
 	 * ...
 	 * @author Thomas Versteeg
 	 */
 	public class ShaderPass {
-		private static const _agal:AGALMiniAssembler = new AGALMiniAssembler();
 		private var _program:Program3D;
-		private var _context:Context3D;
 		private var _renderTexture:Boolean;
 		private var _tex:Texture;
+		private var _vs:String;
+		private var _fs:String;
+		private var _w:int, _h:int;
 		
 		//TODO: Add description
-		public function ShaderPass(context:Context3D, rendersToTexture:Boolean, width:Number = 1, height:Number = 1) {
-			_context = context;
+		public function ShaderPass(rendersToTexture:Boolean, width:int = 1, height:int = 1) {
 			_renderTexture = rendersToTexture;
-			if(_renderTexture) _tex = _context.createTexture(width, height, Context3DTextureFormat.BGRA, true)
+			_w = width;
+			_h = height;
 		}
 		
-		public function setup(vertexShader:String, fragmentShader:String):void {
-			var vs:ByteArray = _agal.assemble(Context3DProgramType.VERTEX, vertexShader)
-			var fs:ByteArray = _agal.assemble(Context3DProgramType.FRAGMENT, fragmentShader)
-			_program = _context.createProgram();
-			_program.upload(vs, fs);
+		public function addShader(vertexShader:String, fragmentShader:String):void {
+			_vs = vertexShader;
+			_fs = fragmentShader;
 		}
 		
-		public function render(indexBuffer:IndexBuffer3D):void {
-			if (!_renderTexture) {
-				_context.setRenderToBackBuffer();
-			}else {
-				_context.setRenderToTexture(_tex, false);
+		public function setup(context:Context3D):void {
+			if (_renderTexture) {
+				_tex = context.createTexture(_w, _h, Context3DTextureFormat.BGRA, true)
 			}
+			var vert:AGALMiniAssembler = new AGALMiniAssembler();
+			var frag:AGALMiniAssembler = new AGALMiniAssembler();
+			vert.assemble(Context3DProgramType.VERTEX, _vs);
+			frag.assemble(Context3DProgramType.FRAGMENT, _fs);
+			_program = context.createProgram();
+			_program.upload(vert.agalcode, frag.agalcode);
+		}
+		
+		public function render(stageObject:Object, context:Context3D, indexBuffer:IndexBuffer3D, numTriangles:int = 1):void {
+			if (!_renderTexture) {
+				context.setRenderToBackBuffer();
+			}else {
+				context.setRenderToTexture(_tex, false, stageObject.antiAliasing);
+			}
+			context.clear(stageObject.r, stageObject.g, stageObject.b, 0);
+			context.setProgram(_program);
+			context.drawTriangles(indexBuffer, 0, numTriangles);
 			
-			_context.clear(0, 0, 0, 0);
-			_context.setProgram(_program);
-			_context.drawTriangles(indexBuffer);
+			if (!_renderTexture) {
+				context.present();
+			}
 		}
 		
 		public function getTexture():Texture {

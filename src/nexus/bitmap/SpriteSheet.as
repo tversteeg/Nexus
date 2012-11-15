@@ -74,7 +74,8 @@ package nexus.bitmap {
 			var r:Number = (re.x + re.width)/_s.width
 			var d:Number = (re.y + re.height)/_s.height
 
-			return new <Number>[l, d, l, u, r, u, r, d];
+			return new<Number>[l, d, l, u, r, u, r, d];
+			//[0, 1, 0, 0, 1, 0, 1, 1]
 		}
 		
 		/**

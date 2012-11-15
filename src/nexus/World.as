@@ -167,17 +167,54 @@ package nexus {
 			stage.stage3Ds[0].requestContext3D(Context3DRenderMode.AUTO);
 		}
 		
+		public function renderTextureToPass(drawTexture:Texture, pass:ShaderPass = null, constants:Object = null):void {
+			if (_po.length > 0 && _po.ready) {
+				if (pass == null) {
+					pass = _passes[0]
+				}
+				
+				_c3d.setCulling(Context3DTriangleFace.BACK);
+				_c3d.setDepthTest(false, Context3DCompareMode.ALWAYS)
+				_c3d.setBlendFactors(Context3DBlendFactor.ONE, Context3DBlendFactor.ONE_MINUS_SOURCE_ALPHA);
+				_c3d.setProgramConstantsFromMatrix(Context3DProgramType.VERTEX, 0, _mvm, true);
+				if (constants != null) {
+					if("vertex" in constants){
+						_c3d.setProgramConstantsFromVector(Context3DProgramType.VERTEX, 1, constants.vertex);
+					}
+					if("fragment" in constants){
+						_c3d.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, 0, constants.fragment);
+					}
+				}
+				
+				_vb = _c3d.createVertexBuffer(4, 3);
+				_ub = _c3d.createVertexBuffer(4 ,2);
+				_ib = _c3d.createIndexBuffer(6);
+				_vb.uploadFromVector(new <Number>[0, _h, 1, 0, 0, 1, _w, 0, 1, _w, _h, 1], 0, 4)
+				_ub.uploadFromVector(new <Number>[0, 1, 0, 0, 1, 0, 1, 1], 0, 4)
+				_ib.uploadFromVector(new <uint>[0, 1, 2, 0, 2, 3], 0 , 6)
+				_c3d.setVertexBufferAt(0, _vb, 0, Context3DVertexBufferFormat.FLOAT_3);
+				_c3d.setVertexBufferAt(1, _ub, 0, Context3DVertexBufferFormat.FLOAT_2);
+				
+				_uvb = true;
+				
+				_c3d.setTextureAt(0, drawTexture);
+				
+				pass.render(_o, _c3d, _ib, 2);
+			}
+		}
+		
 		/**
 		 * Draws the objects to the stage
 		 */
-		public function renderAllToPass(pass:ShaderPass, constants:Object = null):void {
+		public function renderStageToPass(pass:ShaderPass = null, constants:Object = null):void {
 			//TODO: Give every drawObject a drawPriority, and draw the highest priority latest
-			_c3d.clear(_o.r, _o.g, _o.b);
 			
 			var l:int = _po.length;
 			
-			if (l > 0 && _po.ready){
-				_c3d.setProgram(_sh);
+			if (l > 0 && _po.ready) {
+				if (pass == null) {
+					pass = _passes[0]
+				}
 				_c3d.setCulling(Context3DTriangleFace.BACK);
 				_c3d.setDepthTest(false, Context3DCompareMode.ALWAYS)
 				_c3d.setBlendFactors(Context3DBlendFactor.ONE, Context3DBlendFactor.ONE_MINUS_SOURCE_ALPHA);
@@ -242,11 +279,10 @@ package nexus {
 				
 				_vb.uploadFromVector(_v, 0, _v.length / 3);
 				_c3d.setVertexBufferAt(0, _vb, 0, Context3DVertexBufferFormat.FLOAT_3);
-				_c3d.setVertexBufferAt(1, _ub, 0,  Context3DVertexBufferFormat.FLOAT_2);
-
-				_c3d.drawTriangles(_ib, 0, _po.length << 1);
+				_c3d.setVertexBufferAt(1, _ub, 0, Context3DVertexBufferFormat.FLOAT_2);
+				
+				pass.render(_o, _c3d, _ib, _po.length << 1);
 			}
-			_c3d.present();
 		}
 		
 		/**
@@ -308,25 +344,30 @@ package nexus {
 			}
 		}
 		
-		public function addPass(vertexShader:String, fragmentShader:String, drawToTexture:Boolean = false):ShaderPass {
-			var w:int = _w
-			w--;
-			w |= w >> 1;
-			w |= w >> 2;
-			w |= w >> 4;
-			w |= w >> 8;
-			w |= w >> 16;
-			w++;
-			var h:int = _h
-			h--;
-			h |= h >> 1;
-			h |= h >> 2;
-			h |= h >> 4;
-			h |= h >> 8;
-			h |= h >> 16;
-			h++;
-			var pass:ShaderPass = new ShaderPass(_c3d, drawToTexture, w, h);
-			pass.setup(vertexShader, fragmentShader);
+		public function addPass(drawToTexture:Boolean = false, vertexShader:String = null, fragmentShader:String = null):ShaderPass {
+			var w:int = 1;
+			var h:int = 1;
+			if(drawToTexture){
+				w = _w
+				w--, w |= w >> 1, w |= w >> 2, w |= w >> 4, w |= w >> 8, w |= w >> 16, w++;
+				h = _h
+				h--, h |= h >> 1, h |= h >> 2, h |= h >> 4, h |= h >> 8, h |= h >> 16, h++;
+			}
+			if (vertexShader == null) {
+				vertexShader = "dp4 op.x, va0, vc0 \n"+
+					"dp4 op.y, va0, vc1 \n"+ 
+					"mov op.z, vc2.z    \n"+
+					"mov op.w, vc3.w    \n"+
+					"mov v0, va1.xy     \n"+
+					"mov v0.z, va0.z    \n";
+			}
+			if (fragmentShader == null) {
+				fragmentShader = "tex ft0, v0, fs0 <2d,linear, nearest, "+ (_o.mipmap ? "mipnearest" : "nomip") +">\n"+
+					"mul ft0, ft0, v0.zzzz\n"+
+					"mov oc, ft0 \n"
+			}
+			var pass:ShaderPass = new ShaderPass(drawToTexture, w, h);
+			pass.addShader(vertexShader, fragmentShader);
 			var l:int = _passes.length
 			_passes[l] = pass;
 			return pass;
@@ -334,41 +375,18 @@ package nexus {
 		
 		private function context3DEvent(e:Event):void {
 			_c3d = _s.stage3Ds[0].context3D;
-			setupShaders();
+			_c3d.configureBackBuffer(_w, _h, _o.antiAlias, false);
 			uploadTextures();
 			camera(0, 0, _w, _h);
+			
+			var i:int, l:int = _passes.length
+			for (i = 0; i < l; i++) {
+				_passes[i].setup(_c3d)
+			}
+			
 			dispatchEvent(new MessageEvent(MessageEvent.CONTENT_ACTIVE, "init"));
 			dispatchEvent(new MessageEvent(MessageEvent.CONTENT_ACTIVE, _c3d.driverInfo));
 			_ini = true;
-		}
-		
-		private function setupShaders():void{
-			_c3d.configureBackBuffer(_w, _h, _o.antiAlias, false);
-			
-			var vert:AGALMiniAssembler = new AGALMiniAssembler();
-			var frag:AGALMiniAssembler = new AGALMiniAssembler();
-			if ("vertex" in _o) {
-				vert.assemble( Context3DProgramType.VERTEX, _o.vertex);
-			}else {
-				vert.assemble( Context3DProgramType.VERTEX,
-					"dp4 op.x, va0, vc0 \n"+
-					"dp4 op.y, va0, vc1 \n"+ 
-					"mov op.z, vc2.z    \n"+
-					"mov op.w, vc3.w    \n"+
-					"mov v0, va1.xy     \n"+
-					"mov v0.z, va0.z    \n");
-			}
-			if ("fragment" in _o) {
-				frag.assemble( Context3DProgramType.FRAGMENT, _o.fragment);
-			}else {
-				frag.assemble( Context3DProgramType.FRAGMENT,
-					"tex ft0, v0, fs0 <2d,linear, nearest, "+ (_o.mipmap ? "mipnearest" : "nomip") +">\n"+
-					"mul ft0, ft0, v0.zzzz\n"+
-					"mov oc, ft0 \n");
-			}
-			
-			_sh = _c3d.createProgram();
-			_sh.upload(vert.agalcode, frag.agalcode);
 		}
 		
 		private function setTextures():void {
