@@ -3,10 +3,10 @@ package nexus.bitmap {
 	import flash.display.BitmapData;
 	import flash.display.DisplayObject;
 	import flash.display3D.Context3D;
-	import flash.display3D.Context3DTextureFormat
+	import flash.display3D.Context3DTextureFormat;
 	import flash.display3D.textures.Texture;
-	import flash.geom.Matrix;
 	import flash.geom.Point;
+	import flash.geom.Matrix;
 	import flash.geom.Rectangle;
 	/**
 	 * ...
@@ -86,6 +86,15 @@ package nexus.bitmap {
 		}
 		
 		/**
+		 * Returns the rectangle of the specified sprite
+		 * @param	spriteId the id of the sprite
+		 * @return	a rectangle for the shape
+		 */
+		public function getRect(spriteId:int):Rectangle {
+			return _r[spriteId];
+		}
+		
+		/**
 		 * Returns the position of the specified sprite
 		 * @param	spriteId the id of the sprite
 		 * @return	a position point
@@ -116,6 +125,20 @@ package nexus.bitmap {
 			tm.translate(-_r[spriteId].x,-_r[spriteId].y);
 			tempBmd.draw(_s, tm);
 			return tempBitmap;
+		}
+		
+		/**
+		 * Returns the sprite as bitmapData, useful for debugging purposes
+		 * @param	spriteId the id of the sprite
+		 * @return	the sprite as bitmapData
+		 */
+		public function getBitmapData(spriteId:int):BitmapData{
+			var tempBmd:BitmapData = new BitmapData(_r[spriteId].width,_r[spriteId].height, true,0);
+			
+			var tm:Matrix = new Matrix();
+			tm.translate(-_r[spriteId].x,-_r[spriteId].y);
+			tempBmd.draw(_s, tm);
+			return tempBmd;
 		}
 		
 		private function createUVs():void {

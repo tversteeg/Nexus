@@ -26,6 +26,23 @@ package nexus.math {
 		public static var HALFPI:Number = Math.PI * 0.5;
 		
 		/**
+		 * Returns the nearest power of 2, example 266 becomes 512
+		 * @param	n the input
+		 * @return a integer that is the power of 2
+		 */
+		public static function nearesPowerTwo(n:int):int {
+			var v:int = n;
+			v--;
+			v |= v >> 1;
+			v |= v >> 2;
+			v |= v >> 4;
+			v |= v >> 8;
+			v |= v >> 16;
+			v++;
+			return v;
+		}
+		
+		/**
 		 * A faster way then Math.abs()
 		 * @param	n the number thats going to be positive
 		 * @return	returns a positive number

@@ -1,9 +1,11 @@
-package nexus.objects {
+package nexus {
+	import flash.display3D.textures.Texture;
 	import nexus.adobe.utils.*;
 	import nexus.bitmap.*;
 	import nexus.events.*;
 	import nexus.interfaces.IMapAble;
 	import nexus.math.Vector2;
+	import nexus.math.Math2;
 	import nexus.objects.*;
 	import nexus.shapes.*;
 	import flash.display.*;
@@ -11,6 +13,7 @@ package nexus.objects {
 	import flash.events.*;
 	import flash.geom.*;
 	import flash.utils.*;
+	import nexus.utils.ShaderPass;
 	/**
 	 * ...
 	 * @author Thomas Versteeg, 2012
@@ -26,6 +29,7 @@ package nexus.objects {
 		public var _po:Pool = new Pool();
 		public var _v:Vector.<Number>, _i:Vector.<uint>, _uv:Vector.<Number>;
 		private var _uvb:Boolean = true, _ini:Boolean = false;
+		private var _passes:Vector.<ShaderPass> = new Vector.<ShaderPass>();
 		
 		/**
 		 * Creates a new world class, this is essentially your new stage
@@ -164,41 +168,9 @@ package nexus.objects {
 		}
 		
 		/**
-		 * Updates the engine where the physics get recalculated if it lags behind
-		 */
-		public function updateTimeStep(constants:Object = null):void {
-			_bt = getTimer();
-			_ot = (_bt - _at) - _st;
-			
-			updateFrame();
-			drawFrame(constants);
-			
-			_at = getTimer();
-			_td = _at - _bt;
-			_st = (_p - _td) - _ot;
-			if (_st <= 0) {
-				_e-= _st;
-				_st = 2;
-			}
-			
-			while (_e > _p) {
-				updateFrame();
-				_e-= _p;
-			}
-			
-		}
-		
-		/**
-		 * Updates the positions and physics of the objects
-		 */
-		public function updateFrame():void {
-			
-		}
-		
-		/**
 		 * Draws the objects to the stage
 		 */
-		public function drawFrame(constants:Object = null):void {
+		public function renderAllToPass(pass:ShaderPass, constants:Object = null):void {
 			//TODO: Give every drawObject a drawPriority, and draw the highest priority latest
 			_c3d.clear(_o.r, _o.g, _o.b);
 			
@@ -206,6 +178,8 @@ package nexus.objects {
 			
 			if (l > 0 && _po.ready){
 				_c3d.setProgram(_sh);
+				_c3d.setCulling(Context3DTriangleFace.BACK);
+				_c3d.setDepthTest(false, Context3DCompareMode.ALWAYS)
 				_c3d.setBlendFactors(Context3DBlendFactor.ONE, Context3DBlendFactor.ONE_MINUS_SOURCE_ALPHA);
 				_c3d.setProgramConstantsFromMatrix(Context3DProgramType.VERTEX, 0, _mvm, true);
 				
@@ -219,7 +193,7 @@ package nexus.objects {
 				}
 				
 				setTextures();
-				
+				//TODO: Change vector to byte array
 				var i:int, j:int, l2:int, cdx:int, b:IMapAble, li:Vector.<Point>, al:Number, cuv:Vector.<Number>;
 				for (i = 0; i < l; i++) {
 					b = _po.children[i];
@@ -296,6 +270,19 @@ package nexus.objects {
 		}
 		
 		//TODO: Add description
+		public function drawSpriteToSprite(xPosition:Number, yPosition:Number, rotation:Number, spriteIdDraw:int, spriteIdTo:int, sheetId:int = 0):void {
+			var size:Point = _sl[sheetId].getSize(spriteIdTo);
+			if (xPosition< 0 || xPosition > size.x || yPosition < 0 || yPosition > size.y) return;
+			var tempPos:Point = _sl[sheetId].getPos(spriteIdTo);
+			tempPos.x += xPosition;
+			tempPos.y += yPosition;
+			var m:Matrix = new Matrix();
+			m.rotate(rotation);
+			m.tx = tempPos.x;
+			m.ty = tempPos.y;
+			_sl[sheetId].sheetBitmap.draw(_sl[sheetId].getBitmapData(spriteIdDraw), m, null, null, _sl[sheetId].getRect(spriteIdTo), false);
+		}
+		
 		public function getSpritePixel(xPosition:Number, yPosition:Number, spriteId:int, sheetId:int = 0):uint {
 			var size:Point = _sl[sheetId].getSize(spriteId);
 			if (xPosition< 0 || xPosition > size.x || yPosition < 0 || yPosition > size.y) return 0;
@@ -319,6 +306,30 @@ package nexus.objects {
 			for (i = 0; i < l; i++) {
 				_sl[i].uploadTexture(_c3d, _o.mipmap);
 			}
+		}
+		
+		public function addPass(vertexShader:String, fragmentShader:String, drawToTexture:Boolean = false):ShaderPass {
+			var w:int = _w
+			w--;
+			w |= w >> 1;
+			w |= w >> 2;
+			w |= w >> 4;
+			w |= w >> 8;
+			w |= w >> 16;
+			w++;
+			var h:int = _h
+			h--;
+			h |= h >> 1;
+			h |= h >> 2;
+			h |= h >> 4;
+			h |= h >> 8;
+			h |= h >> 16;
+			h++;
+			var pass:ShaderPass = new ShaderPass(_c3d, drawToTexture, w, h);
+			pass.setup(vertexShader, fragmentShader);
+			var l:int = _passes.length
+			_passes[l] = pass;
+			return pass;
 		}
 		
 		private function context3DEvent(e:Event):void {
