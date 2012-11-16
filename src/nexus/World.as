@@ -22,7 +22,7 @@ package nexus {
 		private var _sl:Vector.<SpriteSheet> = new Vector.<SpriteSheet>();
 		private var _s:Stage;
 		private var _c3d:Context3D, _sh:Program3D, _vb:VertexBuffer3D, _ib:IndexBuffer3D, _ub:VertexBuffer3D;
-		private var _bt:int, _at:int, _ot:int, _st:int, _td:int, _e:int, _w:int, _h:int;
+		private var _bt:int, _at:int, _ot:int, _st:int, _td:int, _e:int, _w:int, _h:int
 		private var _p:Number
 		private var _o:Object;
 		private var _mvm:Matrix3D;
@@ -48,11 +48,15 @@ package nexus {
 		 * @param	sheet the sprite sheet, it can be anything that could be drawn
 		 * @param	position the position string in the form of an JSON
 		 */
-		public function addSpriteSheet(sheet:DisplayObject, position:String):void {
+		public function addSpriteSheet(sheet:DisplayObject, position:String, normalMap:DisplayObject = null):void {
 			//TODO: Create byte code instead of JSON
 			var s:SpriteSheet = new SpriteSheet(sheet, position);
 			var i:int = _sl.length;
 			_sl[i] = s;
+			
+			if (normalMap != null) {
+				s.setNormalMap(normalMap);
+			}
 		}
 		
 		/**
@@ -167,7 +171,7 @@ package nexus {
 			stage.stage3Ds[0].requestContext3D(Context3DRenderMode.AUTO);
 		}
 		
-		public function renderTextureToPass(drawTexture:Texture, pass:ShaderPass = null, constants:Object = null):void {
+		public function renderTextureToPass(drawTexture:Texture, normalMap:Texture = null, pass:ShaderPass = null,  constants:Object = null):void {
 			if (_po.length > 0 && _po.ready) {
 				if (pass == null) {
 					pass = _passes[0]
@@ -181,8 +185,20 @@ package nexus {
 					if("vertex" in constants){
 						_c3d.setProgramConstantsFromVector(Context3DProgramType.VERTEX, 1, constants.vertex);
 					}
+					if("vertex2" in constants){
+						_c3d.setProgramConstantsFromVector(Context3DProgramType.VERTEX, 2, constants.vertex2);
+					}
+					if("vertex3" in constants){
+						_c3d.setProgramConstantsFromVector(Context3DProgramType.VERTEX, 3, constants.vertex3);
+					}
 					if("fragment" in constants){
 						_c3d.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, 0, constants.fragment);
+					}
+					if("fragment2" in constants){
+						_c3d.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, 1, constants.fragment2);
+					}
+					if("fragment3" in constants){
+						_c3d.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, 2, constants.fragment3);
 					}
 				}
 				
@@ -197,7 +213,16 @@ package nexus {
 				
 				_uvb = true;
 				
+				var i:int, l:int = _sl.length;
+				for (i = 1; i < l; i++) {
+					_c3d.setTextureAt(i, null)
+				}
+				
 				_c3d.setTextureAt(0, drawTexture);
+				
+				if (normalMap != null) {
+					_c3d.setTextureAt(1, normalMap)
+				}
 				
 				pass.render(_o, _c3d, _ib, 2);
 			}
@@ -206,7 +231,7 @@ package nexus {
 		/**
 		 * Draws the objects to the stage
 		 */
-		public function renderStageToPass(pass:ShaderPass = null, constants:Object = null):void {
+		public function renderStageToPass(pass:ShaderPass = null, drawNormal:Boolean = false, constants:Object = null):void {
 			//TODO: Give every drawObject a drawPriority, and draw the highest priority latest
 			
 			var l:int = _po.length;
@@ -224,13 +249,27 @@ package nexus {
 					if("vertex" in constants){
 						_c3d.setProgramConstantsFromVector(Context3DProgramType.VERTEX, 1, constants.vertex);
 					}
+					if("vertex2" in constants){
+						_c3d.setProgramConstantsFromVector(Context3DProgramType.VERTEX, 2, constants.vertex2);
+					}
+					if("vertex3" in constants){
+						_c3d.setProgramConstantsFromVector(Context3DProgramType.VERTEX, 3, constants.vertex3);
+					}
 					if("fragment" in constants){
 						_c3d.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, 0, constants.fragment);
 					}
+					if("fragment2" in constants){
+						_c3d.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, 1, constants.fragment2);
+					}
+					if("fragment3" in constants){
+						_c3d.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, 2, constants.fragment3);
+					}
 				}
 				
-				setTextures();
+				setTextures(drawNormal);
+				
 				//TODO: Change vector to byte array
+				//TODO: Create class for normals so the vertex list doesnt have to be recalculated
 				var i:int, j:int, l2:int, cdx:int, b:IMapAble, li:Vector.<Point>, al:Number, cuv:Vector.<Number>;
 				for (i = 0; i < l; i++) {
 					b = _po.children[i];
@@ -389,11 +428,16 @@ package nexus {
 			_ini = true;
 		}
 		
-		private function setTextures():void {
+		private function setTextures(drawNormal:Boolean):void {
 			var i:int, l:int = _sl.length;
 			for (i = 0; i < l; i++) {
-				_c3d.setTextureAt(i, _sl[i].texture);
+				if (!drawNormal) {
+					_c3d.setTextureAt(i, _sl[i].texture);
+				}else {
+					_c3d.setTextureAt(i, _sl[i].normalTexture)
+				}
 			}
+			_c3d.setTextureAt(i,null)
 		}
 		
 	}

@@ -13,11 +13,14 @@ package nexus.bitmap {
 	 * @author Thomas Versteeg, 2012
 	 */
 	public class SpriteSheet {
-		private var _s:BitmapData;// Sheet Bitmap;
+		private var _s:BitmapData;// Sheet Bitmap
+		private var _n:BitmapData;// Normal Bitmap
 		private var _t:Texture;// Texture
+		private var _nt:Texture;// Normal Texture
 		private var _po:Object;// Position Data extracted
 		private var _r:Vector.<Rectangle> = new Vector.<Rectangle>();// Contains the rectangles created by the uv
 		private var _c:Vector.<Rectangle> = new Vector.<Rectangle>();// Contains the offests created by the uv
+		private var _hasNormal:Boolean = false;
 		
 		/**
 		 * Create a new spriteSheet from any DisplayObject, and slices it up with the JSON file
@@ -41,6 +44,12 @@ package nexus.bitmap {
 			if (_t == null) {
 				_t = context3D.createTexture(_s.width, _s.height, Context3DTextureFormat.BGRA, false);
 			}
+			if (_hasNormal) {
+				if (_nt == null) {
+					_nt = context3D.createTexture(_n.width, _n.height, Context3DTextureFormat.BGRA, false)
+				}
+				_nt.uploadFromBitmapData(_n, 0)
+			}
 			if (mipmap) {
 				var mw:int = _s.width;
 				var mh:int = _s.height;
@@ -59,6 +68,17 @@ package nexus.bitmap {
 			}else {
 				_t.uploadFromBitmapData(_s,0);
 			}
+			//MAYBE: Add mipmap feature for normal maps
+		}
+		
+		/**
+		 * Creates a Normal Map for advanced lighting techniques
+		 * @param	sheet the Normal Map that must be created
+		 */
+		public function setNormalMap(sheet:DisplayObject):void {
+			_n = new BitmapData(sheet.width, sheet.height, true, 0);
+			_n.draw(sheet);
+			_hasNormal = true;
 		}
 		
 		/**
@@ -152,6 +172,10 @@ package nexus.bitmap {
 			}
 		}
 		
+		public function get hasNormal():Boolean {
+			return _hasNormal;
+		}
+		
 		public function set sheetBitmap(b:BitmapData):void {
 			_s = b;
 		}
@@ -164,6 +188,10 @@ package nexus.bitmap {
 		}
 		public function get texture():Texture {
 			return _t;
+		}
+		
+		public function get normalTexture():Texture {
+			return _nt;
 		}
 		
 	}
