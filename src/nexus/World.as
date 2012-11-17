@@ -268,41 +268,43 @@ package nexus {
 				
 				setTextures(drawNormal);
 				
-				//TODO: Change vector to byte array
-				//TODO: Create class for normals so the vertex list doesnt have to be recalculated
-				var i:int, j:int, l2:int, cdx:int, b:IMapAble, li:Vector.<Point>, al:Number, cuv:Vector.<Number>;
-				for (i = 0; i < l; i++) {
-					b = _po.children[i];
-					cdx = b.mapId * 12;
-					if (b.visible && b.active) {
-						if (b.update()) {
-							_uvb = true;
-							cuv = _sl[b.sheetId].getUVs(b.shapeId);
-							l2 = b.mapId * 8;
-							for (j = 0; j < 8; j++) {
-								_uv[l2 + j] = cuv[j];
+				if(!drawNormal){
+					//TODO: Change vector to byte array
+					//TODO: Create class for normals so the vertex list doesnt have to be recalculated
+					var i:int, j:int, l2:int, cdx:int, b:IMapAble, li:Vector.<Point>, al:Number, cuv:Vector.<Number>;
+					for (i = 0; i < l; i++) {
+						b = _po.children[i];
+						cdx = b.mapId * 12;
+						if (b.visible && b.active) {
+							if (b.update()) {
+								_uvb = true;
+								cuv = _sl[b.sheetId].getUVs(b.shapeId);
+								l2 = b.mapId * 8;
+								for (j = 0; j < 8; j++) {
+									_uv[l2 + j] = cuv[j];
+								}
 							}
-						}
-						al = b.alpha;
-						li = b.list;
-						_v[cdx] = li[3].x;
-						_v[cdx + 1] = li[3].y;
-						_v[cdx + 2] = al;
+							al = b.alpha;
+							li = b.list;
+							_v[cdx] = li[3].x;
+							_v[cdx + 1] = li[3].y;
+							_v[cdx + 2] = al;
 
-						_v[cdx + 3] = li[0].x;
-						_v[cdx + 4] = li[0].y;
-						_v[cdx + 5] = al;
+							_v[cdx + 3] = li[0].x;
+							_v[cdx + 4] = li[0].y;
+							_v[cdx + 5] = al;
 
-						_v[cdx + 6] = li[1].x;
-						_v[cdx + 7] = li[1].y;
-						_v[cdx + 8] = al;
+							_v[cdx + 6] = li[1].x;
+							_v[cdx + 7] = li[1].y;
+							_v[cdx + 8] = al;
 
-						_v[cdx + 9] = li[2].x;
-						_v[cdx + 10] = li[2].y;
-						_v[cdx + 11] = al;
-					}else {
-						for (j = 0; j < 12; j++) {
-							_v[cdx + j] = 0;
+							_v[cdx + 9] = li[2].x;
+							_v[cdx + 10] = li[2].y;
+							_v[cdx + 11] = al;
+						}else {
+							for (j = 0; j < 12; j++) {
+								_v[cdx + j] = 0;
+							}
 						}
 					}
 				}
