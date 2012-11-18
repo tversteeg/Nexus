@@ -29,7 +29,7 @@ package  {
 			if (normalMap != null) {
 				_normalOn = true;
 				_normPass = super.addPass(true)
-				_showPass = super.addPass(false, "dp4 op.x, va0, vc0 \ndp4 op.y, va0, vc1 \nmov op.z, vc2.z \nmov op.w, vc3.w \nmov v0, va1.xy \nmov v0.z, va0.z \n", "tex ft0, v0, fs0 <2d,linear,nomip> \ntex ft1, v0, fs1 <2d,linear,nomip> \nmul ft0, ft0, v0.zzz \nsub ft2.xy, v0.xy, fc0.xy \nmul ft2.y, fc0.w, ft2.y \ndp3 ft2.xy, ft2.xy, ft2.xy \nsqt ft2.xy, ft2.xy \nmul ft2.x, ft2.x, fc0.z \nsub ft0.xyz, ft0.xyz, ft2.xxx \nsub ft2.xy, v0.xy, fc0.xy \nmov ft2.z, fc1.w \nnrm ft2.xyz, ft2.xyz \nmul ft2.xy, ft2.xy, fc1.zz \nmul ft1.xy, ft1.xy, ft2.xy \nnrm ft1.xyz, ft1.xyz \ndp3 ft1.xyz, ft1.xyz, fc1.xxy \nmax ft1.xyz, ft1.xyz, fc1.xxx \nmul ft0.xyz, ft0.xyz, ft1.xyz \nmov oc, ft0");
+				_showPass = super.addPass(false, "dp4 op.x, va0, vc0 \ndp4 op.y, va0, vc1 \nmov op.z, vc2.z \nmov op.w, vc3.w \nmov v0, va1.xy \nmov v0.z, va0.z \n", "tex ft0, v0, fs0 <2d,linear,nomip> \ntex ft1, v0, fs1 <2d,linear,nomip> \nmov ft2.x, fc1.y \nadd ft2.x, ft2.x, ft2.x \nmul ft1, ft1, ft2.x \nsub ft1, ft1, fc1.yyy \nnrm ft1.xyz, ft1.xyz \nmov ft2.z, ft1.w \nsub ft2.xy, fc0.xy, v0.xy \ndp3 ft2.w, ft2.xyz, ft1.xyz \nmul ft1.xyz, ft2.www, ft0.xyz \nsub ft3.xy, v0.xy, fc0.xy \nmul ft3.y, fc0.w, ft3.y \ndp3 ft3.xy, ft3.xy, ft3.xy \nsqt ft3.xy, ft3.xy \nmul ft3.x, ft3.x, fc0.z \nmin ft3.x, ft3.x, fc1.w \nsat ft2.z, ft2.w \npow ft2.z, ft2.z, fc1.z \nmin ft2.z, ft2.z, fc1.x \nadd ft1.xyz, ft2.zzz, ft1.xyz \nsub ft1.xyz, ft1.xyz, ft3.xxx \nmov oc, ft1");
 			}else {
 				_showPass = super.addPass(false)
 			}
@@ -40,7 +40,7 @@ package  {
 			super.renderStageToPass(_firstPass, false);
 			if(_normalOn){
 				super.renderStageToPass(_normPass, true);
-				super.renderTextureToPass(_firstPass.getTexture(), _normPass.getTexture(), _showPass, { fragment:new<Number>[lightPoint.x/_w, lightPoint.y/_h, _lightSize, 0.5],fragment2:new <Number>[0, 1, 2 , 0.1]})
+				super.renderTextureToPass(_firstPass.getTexture(), _normPass.getTexture(), _showPass, { fragment:new<Number>[lightPoint.x/_w, lightPoint.y/_h, _lightSize, 1],fragment2:new <Number>[0.1, 1, 10, 0.5]})
 			}else {
 				super.renderTextureToPass(_firstPass.getTexture(), null, _showPass)
 			}
