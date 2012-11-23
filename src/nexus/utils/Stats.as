@@ -1,28 +1,39 @@
-﻿/**
- * Hi-ReS! Stats
- * 
+/**
+ * Stats
+ *
  * Released under MIT license:
  * http://www.opensource.org/licenses/mit-license.php
  *
  * How to use:
- * 
- *addChild( new Stats() );
- * 
+ *
+ *    addChild( new Stats() );
+ *
+ *    or
+ *
+ *    addChild( new Stats( { bg: 0xffffff } );
+ *
  * version log:
  *
- *08.12.141.4Mr.doob+ Code optimisations and version info on MOUSE_OVER
- *08.07.121.3Mr.doob+ Some speed and code optimisations
- *08.02.151.2Mr.doob+ Class renamed to Stats (previously FPS)
- *08.01.051.2Mr.doob+ Click changes the fps of flash (half up increases,
- *  half down decreases)
- *08.01.041.1Mr.doob & Theo+ Log shape for MEM
- *+ More room for MS
- *+ Shameless ripoff of Alternativa's FPS look :P
- * 07.12.131.0Mr.doob+ First version
+ *    09.10.22        2.2        Mr.doob            + FlipX of graph to be more logic.
+ *                                            + Destroy on Event.REMOVED_FROM_STAGE (thx joshtynjala)
+ *    09.03.28        2.1        Mr.doob            + Theme support.
+ *    09.02.21        2.0        Mr.doob            + Removed Player version, until I know if it's really needed.
+ *                                            + Added MAX value (shows Max memory used, useful to spot memory leaks)
+ *                                            + Reworked text system / no memory leak (original reason unknown)
+ *                                            + Simplified
+ *    09.02.07        1.5        Mr.doob            + onRemovedFromStage() (thx huihuicn.xu)
+ *    08.12.14        1.4        Mr.doob            + Code optimisations and version info on MOUSE_OVER
+ *    08.07.12        1.3        Mr.doob            + Some speed and code optimisations
+ *    08.02.15        1.2        Mr.doob            + Class renamed to Stats (previously FPS)
+ *    08.01.05        1.2        Mr.doob            + Click changes the fps of flash (half up increases, half down decreases)
+ *    08.01.04        1.1        Mr.doob            + Shameless ripoff of Alternativa's FPS look :P
+ *                            Theo            + Log shape for MEM
+ *                                            + More room for MS
+ *     07.12.13        1.0        Mr.doob            + First version
  **/
 
-package nexus.utils{
-	import flash.system.Capabilities;
+package nexus.utils {
+
 	import flash.display.Bitmap;
 	import flash.display.BitmapData;
 	import flash.display.Sprite;
@@ -30,121 +41,162 @@ package nexus.utils{
 	import flash.events.MouseEvent;
 	import flash.geom.Rectangle;
 	import flash.system.System;
+	import flash.text.StyleSheet;
 	import flash.text.TextField;
-	import flash.text.TextFormat;
 	import flash.utils.getTimer;
 
 	public class Stats extends Sprite {
-		private var graph:BitmapData;
-		private var ver:Sprite;
+        protected const WIDTH:uint = 80;
+        protected const HEIGHT:uint = 100;
 
-		private var fpsText:TextField,msText:TextField,memText:TextField,verText:TextField,format:TextFormat;
+        protected var xml:XML;
 
-		private var fps :int, timer : int, ms : int, msPrev: int = 0;
-		private var mem:Number = 0;
+        protected var text:TextField;
+        protected var style:StyleSheet;
 
-		private var rectangle:Rectangle;
+        protected var timer:uint;
+        protected var fps:uint;
+        protected var ms:uint;
+        protected var ms_prev:uint;
+        protected var mem:Number;
+        protected var mem_max:Number;
 
-		public function Stats( ):void {
-			addEventListener(Event.ADDED_TO_STAGE, onAddedToStage);
-		}
+        protected var graph:Bitmap;
+        protected var rectangle:Rectangle;
 
-		private function onAddedToStage( e : Event ):void {
-			removeEventListener(Event.ADDED_TO_STAGE, onAddedToStage);
+        protected var fps_graph:uint;
+        protected var mem_graph:uint;
+        protected var mem_max_graph:uint;
 
-			graphics.beginFill( 0x33 );
-			graphics.drawRect( 0, 0, 65, 40 );
-			graphics.endFill();
+		public var measuredFPS:Number = 0.0;
+        public var driverInfo:String;
+        protected var driverInfoToggle:Boolean = false;
 
-			ver = new Sprite();
-			ver.graphics.beginFill( 0x33 );
-			ver.graphics.drawRect( 0, 0, 65, 30 );
-			ver.graphics.endFill();
-			ver.y = 90;
-			ver.visible = false;
-			addChild(ver);
+        protected var theme:Object = {bg: 0x000033, fps: 0xffff00, ms: 0x00ff00, mem: 0x00ffff, memmax: 0xff0070, drawcalls: 0xFF9900, tris: 0x00AACC};
 
-			verText = new TextField();
-			fpsText = new TextField();
-			msText = new TextField();
-			memText = new TextField();
+        /**
+         * <b>Stats</b> FPS, MS and MEM, all in one.
+         */
+        public function Stats():void {
 
-			format = new TextFormat("_sans",9);
+            mem_max = 0;
 
-			verText.defaultTextFormat = fpsText.defaultTextFormat = msText.defaultTextFormat = memText.defaultTextFormat = format;
-			verText.width = fpsText.width = msText.width = memText.width = 65;
-			verText.selectable = fpsText.selectable = msText.selectable = memText.selectable = false;
+            xml = <xml>
+                <fps>FPS:</fps>
+                <ms>MS:</ms>
+                <mem>MEM:</mem>
+                <memMax>MAX:</memMax>
+                <drawCalls>CALLS:</drawCalls>
+                <tris>TRIS:</tris>
+            </xml>;
 
-			verText.textColor = 0xFFFFFF;
-			verText.text = Capabilities.version.split(" ")[0] + "\n" + Capabilities.version.split(" ")[1];
-			ver.addChild(verText);
+            style = new StyleSheet();
+            style.setStyle("xml", {fontSize: '9px', fontFamily: '_sans', leading: '-2px'});
+            style.setStyle("fps", {color: hex2css(theme.fps)});
+            style.setStyle("ms", {color: hex2css(theme.ms)});
+            style.setStyle("mem", {color: hex2css(theme.mem)});
+            style.setStyle("memMax", {color: hex2css(theme.memmax)});
+            style.setStyle("drawCalls", {color: hex2css(theme.drawcalls)});
+            style.setStyle("tris", {color: hex2css(theme.tris)});
 
-			fpsText.textColor = 0xFFFF00;
-			fpsText.text = "FPS: ";
-			addChild(fpsText);
+            text = new TextField();
+            text.width = WIDTH;
+            text.height = 120;
+            text.styleSheet = style;
+            text.condenseWhite = true;
+            text.selectable = false;
+            text.mouseEnabled = false;
+            text.wordWrap = true;
 
-			msText.y = 10;
-			msText.textColor = 0x00FF00;
-			msText.text = "MS: ";
-			addChild(msText);
+            graph = new Bitmap();
+            graph.y = 70;
 
-			memText.y = 20;
-			memText.textColor = 0x00FFFF;
-			memText.text = "MEM: ";
-			addChild(memText);
+            rectangle = new Rectangle(WIDTH - 1, 0, 1, HEIGHT - 50);
 
-			graph = new BitmapData(65,50,false,0x33);
-			var gBitmap:Bitmap = new Bitmap(graph);
-			gBitmap.y = 40;
-			addChild(gBitmap);
+            addEventListener(Event.ADDED_TO_STAGE, init, false, 0, true);
+            addEventListener(Event.REMOVED_FROM_STAGE, destroy, false, 0, true);
+        }
 
-			rectangle = new Rectangle(0,0,1,graph.height);
+        private function init(e:Event):void {
+            graphics.beginFill(theme.bg);
+            graphics.drawRect(0, 0, WIDTH, HEIGHT);
+            graphics.endFill();
 
-			addEventListener(MouseEvent.CLICK, onClick);
-			addEventListener(MouseEvent.MOUSE_OVER, onMouseOver);
-			addEventListener(MouseEvent.MOUSE_OUT, onMouseOut);
-			addEventListener(Event.ENTER_FRAME, update);
-		}
+            addChild(text);
 
-		private function update( e : Event ):void {
-			timer = getTimer();
-			fps++;
+            graph.bitmapData = new BitmapData(WIDTH, HEIGHT - 50, false, theme.bg);
+            addChild(graph);
 
-			if ( timer - 1000 > msPrev ) {
-				msPrev = timer;
-				mem = Number( ( System.totalMemory * 0.000000954 ).toFixed(3) );
+            addEventListener(MouseEvent.CLICK, onClick);
+            //addEventListener(Event.ENTER_FRAME, update);
+        }
 
-				var fpsGraph:int = Math.min(50,50 / stage.frameRate * fps);
-				var memGraph:Number =  Math.min( 50, Math.sqrt( Math.sqrt( mem * 5000 ) ) ) - 2;
+        private function destroy(e:Event):void {
+            graphics.clear();
 
-				graph.scroll( 1, 0 );
+            while(numChildren > 0)
+                removeChildAt(0);
 
-				graph.fillRect( rectangle , 0x33 );
-				graph.setPixel32( 0, graph.height - fpsGraph, 0xFFFF00);
-				graph.setPixel32( 0, graph.height - ( ( timer - ms ) >> 1 ), 0x00FF00 );
-				graph.setPixel32( 0, graph.height - memGraph, 0x00FFFF);
+            graph.bitmapData.dispose();
 
-				fpsText.text = "FPS: " + fps + " / " + stage.frameRate;
-				memText.text = "MEM: " + mem;
+            removeEventListener(MouseEvent.CLICK, onClick);
+            //removeEventListener(Event.ENTER_FRAME, update);
+        }
 
-				fps = 0;
-			}
+        public function update(drawCalls:int, numTris:int):void {
+            timer = getTimer();
 
-			msText.text = "MS: " + (timer - ms);
-			ms = timer;
-		}
+            if(timer - 1000 > ms_prev) {
+                ms_prev = timer;
+                mem = Number((System.totalMemory * 0.000000954).toFixed(3));
+                mem_max = mem_max > mem ? mem_max : mem;
 
-		private function onClick( e : MouseEvent ):void {
-			(this.mouseY > this.height * .35) ? stage.frameRate-- : stage.frameRate++;
-			fpsText.text = "FPS: " + fps + " / " + stage.frameRate;
-		}
+                measuredFPS = fps;
+				fps_graph = Math.min(graph.height, (fps / stage.frameRate) * graph.height);
+                mem_graph = Math.min(graph.height, Math.sqrt(Math.sqrt(mem * 5000))) - 2;
+                mem_max_graph = Math.min(graph.height, Math.sqrt(Math.sqrt(mem_max * 5000))) - 2;
 
-		private function onMouseOver( e : MouseEvent ):void {
-			ver.visible = true;
-		}
+                graph.bitmapData.scroll(-1, 0);
 
-		private function onMouseOut( e : MouseEvent ):void {
-			ver.visible = false;
-		}
-	}
+                graph.bitmapData.fillRect(rectangle, theme.bg);
+                graph.bitmapData.setPixel(graph.width - 1, graph.height - fps_graph, theme.fps);
+                graph.bitmapData.setPixel(graph.width - 1, graph.height - ((timer - ms) >> 1), theme.ms);
+                graph.bitmapData.setPixel(graph.width - 1, graph.height - mem_graph, theme.mem);
+                graph.bitmapData.setPixel(graph.width - 1, graph.height - mem_max_graph, theme.memmax);
+
+                xml.fps = "FPS: " + fps + " / " + stage.frameRate;
+                xml.mem = "MEM: " + mem;
+                xml.memMax = "MAX: " + mem_max;
+                xml.drawCalls = "DRAW: " + drawCalls;
+                xml.tris = "TRIS: " + numTris;
+
+                fps = 0;
+            }
+
+            fps++;
+
+            xml.ms = "MS: " + (timer - ms);
+            ms = timer;
+
+            if(driverInfoToggle) {
+                text.htmlText = "<xml><fps>" + driverInfo + "</fps></xml>";
+            } else {
+                text.htmlText = xml;
+            }
+        }
+
+        private function onClick(e:MouseEvent):void {
+            //mouseY / height > .5 ? stage.frameRate-- : stage.frameRate++;
+            //xml.fps = "FPS: " + fps + " / " + stage.frameRate;
+            //text.htmlText = xml;
+            driverInfoToggle = !driverInfoToggle;
+            graph.visible = !driverInfoToggle;
+        }
+
+        // .. Utils
+
+        private function hex2css(color:int):String {
+            return "#" + color.toString(16);
+        }
+    }
 }

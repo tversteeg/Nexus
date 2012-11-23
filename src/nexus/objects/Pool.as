@@ -29,7 +29,7 @@ package nexus.objects {
 			if(!init){
 				for (i = 0; i < _t; i++) {
 					c = _l[i];
-					if (!c.active && c.shapeId == shapeId) {
+					if (!c.active) if(c.shapeId == shapeId) {
 						c.active = true;
 						c.visible = true;
 						c.respawned = true;
@@ -39,7 +39,7 @@ package nexus.objects {
 					}
 				}
 			}
-			if (_c != 0 && _t >= _c) {
+			if (_c != 0) if(_t >= _c) {
 				throw new Error("Objects get out of cap", 1);
 				return null;
 			}

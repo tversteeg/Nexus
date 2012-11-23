@@ -1,5 +1,6 @@
 package nexus {
 	import flash.display3D.textures.Texture;
+	import flash.media.Camera;
 	import nexus.adobe.utils.*;
 	import nexus.bitmap.*;
 	import nexus.events.*;
@@ -13,6 +14,7 @@ package nexus {
 	import flash.events.*;
 	import flash.geom.*;
 	import flash.utils.*;
+	import nexus.utils.Camera2D;
 	import nexus.utils.ShaderPass;
 	/**
 	 * ...
@@ -20,12 +22,12 @@ package nexus {
 	 */
 	public class World extends EventDispatcher{
 		private var _sl:Vector.<SpriteSheet> = new Vector.<SpriteSheet>();
-		private var _s:Stage;
+		protected var _s:Stage;
 		private var _c3d:Context3D, _sh:Program3D, _vb:VertexBuffer3D, _ib:IndexBuffer3D, _ub:VertexBuffer3D;
 		private var _bt:int, _at:int, _ot:int, _st:int, _td:int, _e:int, _w:int, _h:int
 		private var _p:Number
 		private var _o:Object;
-		private var _mvm:Matrix3D;
+		protected var _mvm:Matrix3D, _texturePassMatrix:Matrix3D;
 		public var _po:Pool = new Pool();
 		public var _v:Vector.<Number>, _i:Vector.<uint>, _uv:Vector.<Number>;
 		private var _uvb:Boolean = true, _ini:Boolean = false;
@@ -41,6 +43,9 @@ package nexus {
 			_p = 1000 / frameRate;
 			_w = width;
 			_h = height;
+			
+			_mvm = new Matrix3D();
+			_texturePassMatrix = new Matrix3D();
 		}
 		
 		/**
@@ -148,6 +153,9 @@ package nexus {
 			_s = stage;
 			_o = variables;
 			
+			_s.scaleMode = StageScaleMode.NO_SCALE;
+			_s.align = StageAlign.TOP_LEFT;
+			
 			if (!"antiAliasing" in _o) {
 				_o.antiAliasing = 0;
 			}
@@ -180,16 +188,16 @@ package nexus {
 				_c3d.setCulling(Context3DTriangleFace.BACK);
 				_c3d.setDepthTest(false, Context3DCompareMode.ALWAYS)
 				_c3d.setBlendFactors(Context3DBlendFactor.ONE, Context3DBlendFactor.ONE_MINUS_SOURCE_ALPHA);
-				_c3d.setProgramConstantsFromMatrix(Context3DProgramType.VERTEX, 0, _mvm, true);
+				_c3d.setProgramConstantsFromMatrix(Context3DProgramType.VERTEX, 0, _texturePassMatrix, true);
 				if (constants != null) {
 					if("vertex" in constants){
-						_c3d.setProgramConstantsFromVector(Context3DProgramType.VERTEX, 1, constants.vertex);
+						_c3d.setProgramConstantsFromVector(Context3DProgramType.VERTEX, 4, constants.vertex);
 					}
 					if("vertex2" in constants){
-						_c3d.setProgramConstantsFromVector(Context3DProgramType.VERTEX, 2, constants.vertex2);
+						_c3d.setProgramConstantsFromVector(Context3DProgramType.VERTEX, 5, constants.vertex2);
 					}
 					if("vertex3" in constants){
-						_c3d.setProgramConstantsFromVector(Context3DProgramType.VERTEX, 3, constants.vertex3);
+						_c3d.setProgramConstantsFromVector(Context3DProgramType.VERTEX, 6, constants.vertex3);
 					}
 					if("fragment" in constants){
 						_c3d.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, 0, constants.fragment);
@@ -247,13 +255,13 @@ package nexus {
 				
 				if (constants != null) {
 					if("vertex" in constants){
-						_c3d.setProgramConstantsFromVector(Context3DProgramType.VERTEX, 1, constants.vertex);
+						_c3d.setProgramConstantsFromVector(Context3DProgramType.VERTEX, 4, constants.vertex);
 					}
 					if("vertex2" in constants){
-						_c3d.setProgramConstantsFromVector(Context3DProgramType.VERTEX, 2, constants.vertex2);
+						_c3d.setProgramConstantsFromVector(Context3DProgramType.VERTEX, 5, constants.vertex2);
 					}
 					if("vertex3" in constants){
-						_c3d.setProgramConstantsFromVector(Context3DProgramType.VERTEX, 3, constants.vertex3);
+						_c3d.setProgramConstantsFromVector(Context3DProgramType.VERTEX, 6, constants.vertex3);
 					}
 					if("fragment" in constants){
 						_c3d.setProgramConstantsFromVector(Context3DProgramType.FRAGMENT, 0, constants.fragment);
@@ -333,10 +341,20 @@ package nexus {
 		 * @param	width the width of the stage
 		 * @param	height the height of the stage
 		 */
-		public function camera(x:Number, y:Number, width:int, height:int):void {			
-			_mvm = new Matrix3D();
-			_mvm.appendTranslation(-width >> 1, -height >>1, 0);
-			_mvm.appendScale(2/width, -2/height , 1);
+		public function camera(c:Camera2D = null):void {
+			if (c != null) {
+				_mvm = c.viewMatrix;
+			}else {
+				_mvm.identity();
+				_mvm.appendTranslation(-_w >> 1,-_h >>1, 0);
+				_mvm.appendScale(2 / _w, -2 / _h , 1);	
+			}
+		}
+		
+		protected function setTextureMatrix():void {
+			_texturePassMatrix.identity();
+			_texturePassMatrix.appendTranslation(-_w >> 1,-_h >>1, 0);
+			_texturePassMatrix.appendScale(2 / _w, -2 / _h , 1);	
 		}
 		
 		/**
@@ -395,10 +413,7 @@ package nexus {
 				h--, h |= h >> 1, h |= h >> 2, h |= h >> 4, h |= h >> 8, h |= h >> 16, h++;
 			}
 			if (vertexShader == null) {
-				vertexShader = "dp4 op.x, va0, vc0 \n"+
-					"dp4 op.y, va0, vc1 \n"+ 
-					"mov op.z, vc2.z    \n"+
-					"mov op.w, vc3.w    \n"+
+				vertexShader = "m44 op, va0, vc0 \n"+
 					"mov v0, va1.xy     \n"+
 					"mov v0.z, va0.z    \n";
 			}
@@ -414,11 +429,16 @@ package nexus {
 			return pass;
 		}
 		
+		public function get triangles():int {
+			return _uv.length >> 2;
+		}
+		
 		private function context3DEvent(e:Event):void {
 			_c3d = _s.stage3Ds[0].context3D;
 			_c3d.configureBackBuffer(_w, _h, _o.antiAlias, false);
 			uploadTextures();
-			camera(0, 0, _w, _h);
+			setTextureMatrix();
+			camera();
 			
 			var i:int, l:int = _passes.length
 			for (i = 0; i < l; i++) {

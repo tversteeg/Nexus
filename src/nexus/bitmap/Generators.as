@@ -91,6 +91,17 @@ package nexus.bitmap {
 			return true;
 		}
 		
+		public static function world(bmd:BitmapData, seed:int, scale:Number = 100, offset1:uint = 50, offset2:uint = 100):void {
+			var color1:uint = (0xFF) << 24 | offset1 << 16 | offset1 << 8 | offset1;
+			var color2:uint = (0xFF) << 24 | offset2 << 16 | offset2 << 8 | offset2;
+			bmd.lock();
+			bmd.perlinNoise(scale, scale, 3, seed, false, false, 7, true);
+			bmd.threshold(bmd, bmd.rect, new Point(), "<=", color1, 0xFFFF0000, 0xFFFFFFFF, true)
+			bmd.threshold(bmd, bmd.rect, new Point(), "<=", color2, 0xFF00FF00, 0xFFFFFFFF, true)
+			bmd.threshold(bmd, bmd.rect, new Point(), ">", (0xFFFFFF) & offset2, 0xFF0000FF, 0x000000FF, true)
+			bmd.unlock();
+		}
+		
 	}
 
 }
