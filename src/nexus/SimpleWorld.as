@@ -1,4 +1,4 @@
-package  {
+package nexus{
 	import flash.display.DisplayObject;
 	import flash.display.Stage;
 	import flash.geom.Matrix;
@@ -49,7 +49,7 @@ package  {
 			camera(stageCamera);
 		}
 		
-		public function render(lightPoint:Point):void {
+		public function render(lightPoint:Point = null):void {
 			super.renderStageToPass(_firstPass, false);
 			if(_normalOn){
 				super.renderStageToPass(_normPass, true);

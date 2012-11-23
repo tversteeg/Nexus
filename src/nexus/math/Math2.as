@@ -54,10 +54,7 @@ package nexus.math {
 			n ^=  (n << 21);
 			n ^=  (n >>> 35);
 			n ^=  (n << 4);
-			//n = (n << 13) ^ n;
-			//var nn:int = (n * (n * n * 15731 + 789221) + 1376312589) & 0x7fffffff;
 			return n * FASTRANDOMTOFLOAT;
-			//return 1.0 - nn * 0.931322574615478515625e-9;
 		}
 		
 		public static function smoothNoise(x:int, y:int):Number {
