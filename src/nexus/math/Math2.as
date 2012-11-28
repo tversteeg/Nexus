@@ -1,6 +1,8 @@
 package nexus.math {
+	import flash.display.InteractiveObject;
 	import flash.geom.Matrix;
 	import flash.geom.Matrix3D;
+	import nexus.utils.Random;
 	/**
 	 * ...
 	 * @author Thomas Versteeg Et Al, 2012
@@ -9,6 +11,7 @@ package nexus.math {
 
 		private static var FASTRANDOMTOFLOAT:Number = 1 / uint.MAX_VALUE;
 		private static var FASTRANDOMSEED:uint = Math.random() * uint.MAX_VALUE;
+		public static var seed:int = 602366;
 
 		/**
 		 * A faster way then Math.random()
@@ -49,58 +52,55 @@ package nexus.math {
             return m3D;
 		}
 		
-		public static function intNoise(x:int, y:int):Number {
-			var n:uint = x + y * 57;
-			n ^=  (n << 21);
-			n ^=  (n >>> 35);
-			n ^=  (n << 4);
-			return n * FASTRANDOMTOFLOAT;
+		public static function intNoise(x:int, y:int, random:Random):Number {
+			//trace(random.getSignedSeed(x + y * 57));
+			random.seed = ((x * (y ^ x) * 26.216) * y + (y & x) + x) * 0.0001243 ;
+			random.generate();
+			random.generate();
+			random.generate();
+			return random.nextSigned
 		}
 		
-		public static function smoothNoise(x:int, y:int):Number {
-			var corners:Number = (intNoise(x - 1, y - 1) + intNoise(x + 1, y - 1) + intNoise(x - 1, y + 1) + intNoise(x + 1, y + 1)) * 0.0625;
-			var sides:Number = (intNoise(x - 1, y) + intNoise(x + 1, y) + intNoise(x, y + 1) + intNoise(x, y - 1)) * 0.125;
-			var center:Number = intNoise(x, y) * 0.25;
+		public static function smoothNoise(x:int, y:int, r:Random):Number {
+			var corners:Number = (intNoise(x - 1, y - 1, r) + intNoise(x + 1, y - 1, r) + intNoise(x - 1, y + 1, r) + intNoise(x + 1, y + 1, r)) * 0.0625;
+			var sides:Number = (intNoise(x - 1, y, r) + intNoise(x + 1, y, r) + intNoise(x, y + 1, r) + intNoise(x, y - 1, r)) * 0.125;
+			var center:Number = intNoise(x, y, r) * 0.25;
 			return corners + sides + center;
 		}
 		
 		public static function interpolateCosine(a:Number, b:Number, x:Number):Number {
-			/*var ft:Number = x * 3.1415927;
+			var ft:Number = x * 3.1415927;
 			var f:Number = (1 - Math.cos(ft)) * 0.5;
-			return a * (1 - f) + b * f;*/
-			return a * (1 - x) + b * x;
+			return a * (1 - f) + b * f;
+			//return a * (1 - x) + b * x;
 		}
 		
-		public static function interpolateNoise(x:Number, y:Number):Number {
-			var intX:int = x;
-			var intY:int = y;
+		public static function interpolateNoise(x:Number, y:Number,random:Random):Number {
+			var intX:int = x | 0;
+			var intY:int = y | 0;
 			var fracX:Number = x - intX
 			var fracY:Number = y - intY
 			
-			var v1:Number = smoothNoise(intX, intY);
-			var v2:Number = smoothNoise(intX + 1, intY);
-			var v3:Number = smoothNoise(intX, intY + 1);
-			var v4:Number = smoothNoise(intX + 1, intY + 1);
-			/*
-			var v1:Number = intNoise(intX, intY);
-			var v2:Number = intNoise(intX + 1, intY);
-			var v3:Number = intNoise(intX, intY + 1);
-			var v4:Number = intNoise(intX + 1, intY + 1);
-			*/
+			var v1:Number = smoothNoise(intX, intY, random);
+			var v2:Number = smoothNoise(intX + 1, intY, random);
+			var v3:Number = smoothNoise(intX, intY + 1, random);
+			var v4:Number = smoothNoise(intX + 1, intY + 1, random);
+			
 			var i1:Number = interpolateCosine(v1, v2, fracX);
 			var i2:Number = interpolateCosine(v3, v4, fracX);
 			return interpolateCosine(i1, i2, fracY)
 		}
 		
 		public static function perlinNoise(x:Number, y:Number, randomSeed:Number = 0, octave:int = 10, persistance:Number = 1, zoom:Number = 1):Number {
-			var amp:Number = 1, freq:Number = 1, invZoom:Number = 1 / zoom, total:Number = 0, seed:Number = 2 * randomSeed + randomSeed;
+			var amp:Number = 1, freq:Number = 1, invZoom:Number = 1 / zoom, total:Number = 0
 			var n:int = octave-1;
 			var i:int
+			var r:Random = new Random(0);
 			for (i = 0; i < n; i++) {
 				freq = Math.pow(2, i);
-				amp = Math.pow(persistance, i)
+				amp = Math.pow(persistance, i);
 				
-				total += interpolateNoise(x * freq * invZoom + seed, y * freq * invZoom + seed) * amp;
+				total += interpolateNoise(x * freq * invZoom + randomSeed, y * freq * invZoom + randomSeed, r) * amp;
 			}
 			return total;
 		}
@@ -156,11 +156,12 @@ package nexus.math {
 		}
 		
 		/**
-		 * Clams the numbers, between max and min
+		 * Clamps the numbers, between max and min
 		 * @param	n the first number that must be compared
-		 * @param	max the bigger edge
-		 * @param	min the smaller edge
+		 * @param	max the largets possible number
+		 * @param	min the smallest possible number
 		 * @return returns the number between max and min
+		 * @example clamp(1.5, 1, 0) = 1, clamp(-1.5, 1, 0) = 0, clamp(0.5, 1, 0) = 0.5
 		 */
 		public static function clamp(n:Number, max:Number, min:Number):Number {
 			return (n < max) ? ((n > min) ? n : min) : max;

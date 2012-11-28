@@ -63,7 +63,8 @@ package nexus.utils {
 				_viewMatrix.appendScale(_zoom, -_zoom, 1);
 				var hw:Number = _width * 0.5;
 				var hh:Number = _height * 0.5;
-				_viewMatrix.appendTranslation( Math2.clamp(-hw + _x, _minBoundX - hw , -_maxBoundX + hw ), Math2.clamp(hh + _y , _maxBoundY - hh, _minBoundY + hh), 0);
+				//_viewMatrix.appendTranslation( Math2.clamp(-hw + _x, _minBoundX - hw , -_maxBoundX + hw ), Math2.clamp(hh + _y , _maxBoundY - hh, _minBoundY + hh), 0);
+				_viewMatrix.appendTranslation(-_x, _y, 0)
 				//TODO: Add rotation
 				//_viewMatrix.appendRotation(_rotation, Vector3D.Z_AXIS);
 				
@@ -97,20 +98,30 @@ package nexus.utils {
 		}
 		
 		public function get x():Number {
-			return _x;
+			return _x
+		}
+		
+		public function get realX():Number {
+			return _x - _width * 0.5;
 		}
 		
 		public function set x(value:Number):void {
-			_x = value;
+			var hw:Number = _width * 0.5;
+			_x = Math2.clamp(value, _maxBoundX - hw, _minBoundX + hw);
 			_recalculate = true;
 		}
 		
 		public function get y():Number {
-			return _y;
+			return _y
+		}
+		
+		public function get realY():Number {
+			return _y - _height * 0.5;
 		}
 		
 		public function set y(value:Number):void {
-			_y = value;
+			var hh:Number = _height * 0.5;
+			_y = Math2.clamp(value, _maxBoundY - hh, _minBoundY + hh);
 			_recalculate = true;
 		}
 		
