@@ -8,6 +8,11 @@ package nexus.objects {
 	 */
 	public class Pool {
 		
+		private var _l:Vector.<IMapAble> = new Vector.<IMapAble>();//The pool where the boxes are
+		private var _r:Boolean;// Check if the pool is ready for drawing
+		private var _c:int;
+		private var _t:int;
+		
 		public function Pool() {
 			_r = false;
 			_c = 0;
@@ -59,23 +64,19 @@ package nexus.objects {
 			return c;
 		}
 		
-		private var _c:int;
 		public function set cap(num:int):void {
 			_l = new Vector.<IMapAble>(num, true);
 			_c = num;
 		}
 		
-		private var _t:int;
 		public function get length():int {
 			return _t;
 		}
 		
-		private var _r:Boolean;// Check if the pool is ready for drawing
 		public function get ready():Boolean {
 			return _r;
 		}
 		
-		private var _l:Vector.<IMapAble> = new Vector.<IMapAble>();//The pool where the boxes are
 		public function set children(v:Vector.<IMapAble>):void {
 			_l = v;
 		}

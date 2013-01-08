@@ -175,6 +175,8 @@ package nexus {
 			_i = new Vector.<uint>();
 			_uv = new Vector.<Number>();
 			
+			 stage.addEventListener(Event.RESIZE, onResizeEvent);
+			
 			stage.stage3Ds[0].addEventListener(Event.CONTEXT3D_CREATE, context3DEvent);
 			stage.stage3Ds[0].requestContext3D(Context3DRenderMode.AUTO);
 		}
@@ -431,6 +433,22 @@ package nexus {
 		
 		public function get triangles():int {
 			return _uv.length >> 2;
+		}
+		
+		protected function onResizeEvent(event:Event) : void{
+			_w = _s.stageWidth;
+			_h = _s.stageHeight;
+			
+			resize();
+			 
+			_c3d.configureBackBuffer(_w, _h, _o.antiAlias, false);
+		}
+		
+		/**
+		 * Function marked for overriding, called by the onResizeEvent
+		 */
+		public function resize():void {
+			
 		}
 		
 		private function context3DEvent(e:Event):void {

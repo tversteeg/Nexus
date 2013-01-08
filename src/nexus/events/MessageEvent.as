@@ -6,7 +6,7 @@
 		public static const CONTENT_ACTIVE:String = "contentActive";
 		public static const CONTENT_DEACTIVE:String = "contentDeactive";
 
-		public var message:String
+		public var message:String;
 
 		public function MessageEvent(type:String, message:String = "", bubbles:Boolean=false,cancelable:Boolean=false) {
 			super(type,bubbles,cancelable);

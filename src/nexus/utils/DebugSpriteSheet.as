@@ -34,7 +34,7 @@ package nexus.utils {
 				maxX = Math.max(maxX, b.x + size.x + 1);
 				maxY = Math.max(maxY, b.y + size.y + 1);
 				if (maxX > width) {
-					maxX = 0;
+					maxX = size.x;
 					b.x = 0;
 					goY = maxY;
 					b.y = maxY;

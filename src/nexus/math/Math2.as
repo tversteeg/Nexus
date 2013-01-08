@@ -53,7 +53,6 @@ package nexus.math {
 		}
 		
 		public static function intNoise(x:int, y:int, random:Random):Number {
-			//trace(random.getSignedSeed(x + y * 57));
 			random.seed = ((x * (y ^ x) * 26.216) * y + (y & x) + x) * 0.0001243 ;
 			random.generate();
 			random.generate();
@@ -68,27 +67,30 @@ package nexus.math {
 			return corners + sides + center;
 		}
 		
+		public static function interpolate(a:Number, b:Number, x:Number):Number {
+			return a * (1 - x) + b * x;
+		}
+				
 		public static function interpolateCosine(a:Number, b:Number, x:Number):Number {
 			var ft:Number = x * 3.1415927;
 			var f:Number = (1 - Math.cos(ft)) * 0.5;
 			return a * (1 - f) + b * f;
-			//return a * (1 - x) + b * x;
 		}
 		
 		public static function interpolateNoise(x:Number, y:Number,random:Random):Number {
 			var intX:int = x | 0;
 			var intY:int = y | 0;
-			var fracX:Number = x - intX
-			var fracY:Number = y - intY
+			var fracX:Number = x - intX;
+			var fracY:Number = y - intY;
 			
 			var v1:Number = smoothNoise(intX, intY, random);
 			var v2:Number = smoothNoise(intX + 1, intY, random);
 			var v3:Number = smoothNoise(intX, intY + 1, random);
 			var v4:Number = smoothNoise(intX + 1, intY + 1, random);
 			
-			var i1:Number = interpolateCosine(v1, v2, fracX);
-			var i2:Number = interpolateCosine(v3, v4, fracX);
-			return interpolateCosine(i1, i2, fracY)
+			var i1:Number = interpolate(v1, v2, fracX);
+			var i2:Number = interpolate(v3, v4, fracX);
+			return interpolate(i1, i2, fracY);
 		}
 		
 		public static function perlinNoise(x:Number, y:Number, randomSeed:Number = 0, octave:int = 10, persistance:Number = 1, zoom:Number = 1):Number {
@@ -106,9 +108,10 @@ package nexus.math {
 		}
 		
 		/**
-		 * Returns the nearest power of 2, example 266 becomes 512
+		 * Returns the nearest power of 2
 		 * @param	n the input
 		 * @return a integer that is the power of 2
+		 * @example nearesPowerTwo(266) = 512, nearesPowerTwo(1050) = 1024
 		 */
 		public static function nearesPowerTwo(n:int):int {
 			var v:int = n;
