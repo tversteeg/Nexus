@@ -1,7 +1,7 @@
 ![Logo](http://student-kmt.hku.nl/~thomas24/Modules/DesignResearch1/Nexus%20Logo.png)
 ------------
 AS3 2D GPU accelerated engine, easy to use.
-In later editions there will be integrated physics.
+Discontinued
 ------------
 When you want to generate sprite sheets using Adobe Flash CS6, follow these instructions:
 
